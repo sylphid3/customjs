@@ -1,1 +1,114 @@
-function shuffle(array) {var counter = array.length, temp, index;while (counter > 0) {index = Math.floor(Math.random() * counter);counter--;temp = array[counter];array[counter] = array[index];array[index] = temp;}return array;}var relatedTitles=new Array();var relatedTitlesNum=0;var relatedUrls=new Array();var thumburl=new Array();function related_results_labels_thumbs(json){var entries = json.feed.entry || [];shuffle(entries);for(var i=0;i<json.feed.entry.length;i++){var entry=entries[i];relatedTitles[relatedTitlesNum]=entry.title.$t;try{thumburl[relatedTitlesNum]=entry.media$thumbnail.url}catch(error){s=entry.content.$t;a=s.indexOf("<img");b=s.indexOf("src=\"",a);c=s.indexOf("\"",b+5);d=s.substr(b+5,c-b-5);if((a!=-1)&&(b!=-1)&&(c!=-1)&&(d!="")){thumburl[relatedTitlesNum]=d}else{if(typeof(defaultnoimage)!=='undefined'){thumburl[relatedTitlesNum]=defaultnoimage}else{thumburl[relatedTitlesNum]="http://1.bp.blogspot.com/_u4gySN2ZgqE/SosvnavWq0I/AAAAAAAAArk/yL95WlyTqr0/s400/noimage.png"}}}if(relatedTitles[relatedTitlesNum].length>35){relatedTitles[relatedTitlesNum]=relatedTitles[relatedTitlesNum].substring(0,35)+"..."}for(var k=0;k<entry.link.length;k++){if(entry.link[k].rel=='alternate'){relatedUrls[relatedTitlesNum]=entry.link[k].href;relatedTitlesNum++}}}}function removeRelatedDuplicates_thumbs(){var tmp=new Array(0);var tmp2=new Array(0);var tmp3=new Array(0);for(var i=0;i<relatedUrls.length;i++){if(!contains_thumbs(tmp,relatedUrls[i])){tmp.length+=1;tmp[tmp.length-1]=relatedUrls[i];tmp2.length+=1;tmp3.length+=1;tmp2[tmp2.length-1]=relatedTitles[i];tmp3[tmp3.length-1]=thumburl[i]}}relatedTitles=tmp2;relatedUrls=tmp;thumburl=tmp3}function contains_thumbs(a,e){for(var j=0;j<a.length;j++){if(a[j]==e){return true}}return false}function printRelatedLabels_thumbs(current){var splitbarcolor;if(typeof(splittercolor)!=='undefined'){splitbarcolor=splittercolor}else{splitbarcolor="#d4eaf2"}for(var i=0;i<relatedUrls.length;i++){if((relatedUrls[i]==current)||(!relatedTitles[i])){relatedUrls.splice(i,1);relatedTitles.splice(i,1);thumburl.splice(i,1);i--}}var r=Math.floor((relatedTitles.length-1)*Math.random());var i=0;if(relatedTitles.length>0){document.write('<h2>'+relatedpoststitle+'</h2>')}document.write('<div style="clear: both;"/>');while(i<relatedTitles.length&&i<20&&i<maxresults){document.write('<a style="');if(i!=0)document.write('border-left:solid 0.5px '+splitbarcolor+';"');else document.write('"');document.write(' href="'+relatedUrls[r]+'"><img src="'+thumburl[r]+'"/><br/><div class="rptxt">'+relatedTitles[r]+'</div></a>');i++;if(r<relatedTitles.length-1){r++}else{r=0}}document.write('</div>');relatedUrls.splice(0,relatedUrls.length);thumburl.splice(0,thumburl.length);relatedTitles.splice(0,relatedTitles.length)}
+(function($) {
+var loadingGif = 'https://lh3.googleusercontent.com/-FiCzyOK4Mew/T4aAj2uVJKI/AAAAAAAAPaY/x23tjGIH7ls/s32/ajax-loader.gif';
+var olderPostsLink = '';
+var loadMoreDiv = null;
+var postContainerSelector = 'div.blog-posts';
+var loading = false;
+
+var win = $(window);
+var doc = $(document);
+// Took from jQuery to avoid permission denied error in IE.
+var rscript = /<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi;
+
+function loadDisqusScript(domain) {
+  $.getScript('http://' + domain + '.disqus.com/blogger_index.js');
+}
+
+function loadMore() {
+  if (loading) {
+    return;
+  }
+  loading = true;
+
+  if (!olderPostsLink) {
+    loadMoreDiv.hide();
+    return;
+  }
+
+  loadMoreDiv.find('a').hide();
+  loadMoreDiv.find('img').show();
+  $.ajax(olderPostsLink, {
+    'dataType': 'html'
+  }).done(function(html) {
+    var newDom = $('<div></div>').append(html.replace(rscript, ''));
+    var newLink = newDom.find('a.blog-pager-older-link');
+
+    var newPosts = newDom.find(postContainerSelector).children();
+    $(postContainerSelector).append(newPosts);
+
+    // Loaded more posts successfully.  Register this pageview with
+    // Google Analytics.
+    if (window._gaq) {
+      window._gaq.push(['_trackPageview', olderPostsLink]);
+    }
+    // Render +1 buttons.
+    if (window.gapi && window.gapi.plusone && window.gapi.plusone.go) {
+      window.gapi.plusone.go();
+    }
+    // Render Disqus comments.
+    if (window.disqus_shortname) {
+      loadDisqusScript(window.disqus_shortname);
+    }
+    // Render Facebook buttons.
+    if (window.FB && window.FB.XFBML && window.FB.XFBML.parse) {
+      window.FB.XFBML.parse();
+    }
+    // Render Twitter widgets.
+    if (window.twttr && window.twttr.widgets && window.twttr.widgets.load) {
+      window.twttr.widgets.load();
+    }
+
+    if (newLink) {
+      olderPostsLink = newLink.attr('href');
+    } else {
+      olderPostsLink = '';
+      loadMoreDiv.hide();
+    }
+    loadMoreDiv.find('img').hide();
+    loadMoreDiv.find('a').show();
+
+    loading = false;
+  });
+}
+
+function getDocumentHeight() {
+  return Math.max(
+      win.height(),
+      doc.height(),
+      document.documentElement.clientHeight);
+}
+
+function handleScroll() {
+  var height = getDocumentHeight();
+  var pos = win.scrollTop() + win.height();
+  if (height - pos < 150) {
+    loadMore();
+  }
+}
+
+function init() {
+  if (_WidgetManager._GetAllData().blog.pageType == 'item') {
+    return;
+  }
+
+  olderPostsLink = $('a.blog-pager-older-link').attr('href');
+  if (!olderPostsLink) {
+    return;
+  }
+
+  var link = $('<a href="javascript:;">Voir plus d\'articles</a>');
+  link.click(loadMore);
+  var img = $('<img src="' + loadingGif + '" style="display: none;">');
+
+  win.scroll(handleScroll);
+
+  loadMoreDiv = $('<div style="text-align: center; font-size: 150%;"></div>');
+  loadMoreDiv.append(link);
+  loadMoreDiv.append(img);
+  loadMoreDiv.insertBefore($('#blog-pager'));
+  $('#blog-pager').hide();
+}
+
+$(document).ready(init);
+
+})(jQuery);
