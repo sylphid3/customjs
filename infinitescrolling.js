@@ -41,6 +41,22 @@ function loadMore() {
     if (window._gaq) {
       window._gaq.push(['_trackPageview', olderPostsLink]);
     }
+    // Render +1 buttons.
+    if (window.gapi && window.gapi.plusone && window.gapi.plusone.go) {
+      window.gapi.plusone.go();
+    }
+    // Render Disqus comments.
+    if (window.disqus_shortname) {
+      loadDisqusScript(window.disqus_shortname);
+    }
+    // Render Facebook buttons.
+    if (window.FB && window.FB.XFBML && window.FB.XFBML.parse) {
+      window.FB.XFBML.parse();
+    }
+    // Render Twitter widgets.
+    if (window.twttr && window.twttr.widgets && window.twttr.widgets.load) {
+      window.twttr.widgets.load();
+    }
 
     if (newLink) {
       olderPostsLink = newLink.attr('href');
@@ -80,7 +96,7 @@ function init() {
     return;
   }
 
-  var link = $('<a href="javascript:;">Voir plus d'articles</a>');
+  var link = $('<a href="javascript:;">Load more posts</a>');
   link.click(loadMore);
   var img = $('<img src="' + loadingGif + '" style="display: none;">');
 
