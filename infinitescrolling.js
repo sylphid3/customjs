@@ -96,7 +96,7 @@
             return;
         }
 
-        var link = $('<a href="javascript:;">Load more posts</a>');
+        var link = $('<a href="javascript:;">Voir plus darticles</a>');
         link.click(loadMore);
         var img = $('<img src="' + loadingGif + '" style="display: none;">');
 
